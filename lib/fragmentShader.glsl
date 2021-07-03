@@ -22,5 +22,5 @@ void main() {
   vec3 lightDirNorm = normalize(lightDirection);
   vec3 nNormal = normalize(fs_norm);
   vec3 lambertColor = mDiffColor * lightColor * dot(-lightDirNorm,nNormal);
-  outColor = vec4(clamp(lambertColor, 0.0, 1.0),1.0);
+  outColor = vec4(nNormal,1.0);
 }
