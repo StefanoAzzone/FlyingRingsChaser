@@ -15,12 +15,12 @@ uniform mat4 inverseViewProjMatrix; 	//inv-transp of the ViewProjMatrix
 uniform samplerCube cubeMap; 			    //texture of the skybox
 
 void main() {
-  vec4 p = inverseViewProjMatrix*vec4(fs_pos, 1.0);
+  vec4 p = vec4(fs_pos, 1.0);
   vec4 rgba = texture(cubeMap, normalize(p.xyz / p.w));
   vec3 mDiffColor = rgba.rgb;
 
   vec3 lightDirNorm = normalize(lightDirection);
   vec3 nNormal = normalize(fs_norm);
   vec3 lambertColor = mDiffColor * lightColor * dot(-lightDirNorm,nNormal);
-  outColor = vec4(nNormal,1.0);
+  outColor = rgba;
 }
