@@ -30,4 +30,5 @@ void main() {
   vec3 nNormal = normalize(fs_norm);
   vec3 lambertColor = mDiffColor * lightColor * dot(-lightDirNorm,nNormal);
   outColor = cubemapModifier * cubemapRgba + samplerModifier * samplerRgba;
+  
 }
