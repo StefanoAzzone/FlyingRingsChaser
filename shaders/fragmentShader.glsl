@@ -8,27 +8,49 @@ in vec2 fs_uv;
 
 out vec4 outColor;
 
-uniform vec3 lightDirection; 			    //directional light direction vec
-uniform vec3 lightColor; 				      //directional light color
-//uniform vec3 mDiffColor; 				    //material diffuse color
+//Directional light
+uniform vec3 directionalLightDirection; 			    //directional light direction vec
+uniform vec3 directionalLightColor; 				      //directional light color
 
+
+//Spot light
+uniform vec3 spotLightDirection; 			    //Spot light direction vec
+uniform vec3 spotLightColor; 				      //Spot light color
+uniform vec3 spotLightPosition; 			    //Spot light direction vec
+uniform float coneIn; 				            //Spot inner cone
+uniform float coneOut; 				            //Spot outer cone
+
+uniform vec3 effects; 				        //select the light effect
 uniform mat4 inverseViewProjMatrix; 	//inv-transp of the ViewProjMatrix
 uniform samplerCube cubemap; 			    //texture of the skybox
 uniform sampler2D sampler;
-uniform float cubemapModifier;
-uniform float samplerModifier;
 
 void main() {
+
   vec4 p = vec4(fs_pos, 1.0);
 
   vec4 cubemapRgba = texture(cubemap, normalize(p.xyz / p.w));
-  vec3 mDiffColor = cubemapRgba.rgb;
 
   vec4 samplerRgba = texture(sampler, fs_uv);
+  vec3 mDiffColor = samplerRgba.rgb;
 
-  vec3 lightDirNorm = normalize(lightDirection);
+  vec3 lightDirNorm = normalize(directionalLightDirection);
   vec3 nNormal = normalize(fs_norm);
-  vec3 lambertColor = mDiffColor * lightColor * dot(-lightDirNorm,nNormal);
-  outColor = cubemapModifier * cubemapRgba + samplerModifier * samplerRgba;
-  
+  vec3 directionalLambert = mDiffColor * directionalLightColor * dot(-lightDirNorm, nNormal);
+
+  vec3 spotLightDir = normalize(spotLightPosition - fs_pos);
+  float CosAngle = dot(spotLightDir, spotLightDirection);
+  float LCosOut = cos(radians(coneOut / 2.0));
+	float LCosIn = cos(radians(coneOut * coneIn / 2.0));
+	vec4 spotLightCol = vec4(spotLightColor, 1.0) * clamp((CosAngle - LCosOut) / (LCosIn - LCosOut), 0.0, 1.0);
+
+  float LdotN = max(0.0, dot(nNormal, spotLightDir));
+	vec4 LDcol = spotLightCol * vec4(mDiffColor, 1.0);
+	vec4 spotLambert = LDcol * LdotN;
+
+
+
+
+  float skybox = effects.r;
+  outColor = mix((vec4(directionalLambert, 1.0) + spotLambert), cubemapRgba, skybox);
 }
