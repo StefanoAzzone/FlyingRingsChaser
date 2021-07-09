@@ -15,6 +15,6 @@ uniform mat4 nMatrix; 		//InvTransp of the World-View matrix
 void main() {
 	gl_Position = wvpMatrix * vec4(in_pos, 1.0);
 	fs_norm = mat3(nMatrix) * in_norm;
-	fs_pos = (pMatrix * vec4(in_pos, 1.0)).xyz;
+	fs_pos = in_pos;
 	fs_uv = in_uv;
 }
