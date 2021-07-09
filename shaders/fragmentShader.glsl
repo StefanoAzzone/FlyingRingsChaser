@@ -49,5 +49,5 @@ void main() {
 	vec4 spotLambert = LDcol * LdotN;
 
   float skybox = effects.r;
-  outColor = mix((vec4(spotLambert.rgb, 1.0)), cubemapRgba, skybox);
+  outColor = mix((vec4(directionalLambert, 1.0)), cubemapRgba, skybox);
 } 
