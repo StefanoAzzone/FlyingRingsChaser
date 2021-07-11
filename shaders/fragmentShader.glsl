@@ -37,51 +37,6 @@ uniform sampler2D roughSampler;
 uniform sampler2D AOSampler;
 uniform sampler2D heightSampler;
 
-vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
-{ 
-  const float heightScale = 0.02;
-
-    // number of depth layers
-    const float minLayers = 8.0;
-    const float maxLayers = 32.0;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));  
-    // calculate the size of each layer
-    float layerDepth = 1.0 / numLayers;
-    // depth of current layer
-    float currentLayerDepth = 0.0;
-    // the amount to shift the texture coordinates per layer (from vector P)
-    vec2 P = viewDir.xy / viewDir.z * heightScale; 
-    vec2 deltaTexCoords = P / numLayers;
-  
-    // get initial values
-    vec2  currentTexCoords     = texCoords;
-    float currentDepthMapValue = texture(heightSampler, currentTexCoords).r;
-      
-    while(currentLayerDepth < currentDepthMapValue)
-    {
-        // shift texture coordinates along direction of P
-        currentTexCoords -= deltaTexCoords;
-        // get depthmap value at current texture coordinates
-        currentDepthMapValue = texture(heightSampler, currentTexCoords).r;  
-        // get depth of next layer
-        currentLayerDepth += layerDepth;  
-    }
-    
-    // get texture coordinates before collision (reverse operations)
-    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
-
-    // get depth after and before collision for linear interpolation
-    float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = texture(heightSampler, prevTexCoords).r - currentLayerDepth + layerDepth;
- 
-    // interpolation of texture coordinates
-    float weight = afterDepth / (afterDepth - beforeDepth);
-    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
-
-    return finalTexCoords;
-}
-
-
 void main() {
 
   vec3 nNormal = normalize(fs_norm);
@@ -110,9 +65,7 @@ void main() {
 
 
 
-  vec2 texCoords = fs_uv; //mix(fs_uv, ParallaxMapping(fs_uv,  viewDir), effect.g);		//effect.g is 1 if parallax mapping is selected;
-																					//this means: use the normal UVs if ParMap is
-	 																				//unchecked, parallax mapping's coordinates otherwise
+  vec2 texCoords = fs_uv;
   vec4 nMap = texture(normalSampler, texCoords);
   vec3 n = mix(nNormal, normalize(tbn * (nMap.xyz * 2.0 - 1.0)), PBR);		//This means: use the "normal" normal ;) if NorMap is
 								 													//unchecked, NormalMap's normal otherwise
@@ -131,19 +84,19 @@ void main() {
 
 
   // Phong specular
-	float Rough = mix(roughness, RMAO.g, PBR);								//This means: if Texture is selected use as roughness
+	float Rough = mix(roughness, RMAO.r, PBR);								//This means: if Texture is selected use as roughness
 																					//the value from the g channel of the RMAO texture,
    																				//otherwise the value specified by the user in repMetRough
 	float rf = 1.0 - Rough;
 	rf = 250.0 * rf * rf + 1.0;
-	float directionalSpecFact = pow(max(dot(v, -reflect(directionalLightDirection, n)), 0.0), rf);
+	float directionalSpecFact = pow(max(dot(v, -reflect(-directionalLightDirection, n)), 0.0), rf);
 	float spotSpecFact = pow(max(dot(v, -reflect(spotLightDirection, n)), 0.0), rf);//This is to compute the Phong specular factor
                                           //without the environment contribute 
 																					//(only the incoming direct light is considered)
 
   vec4 albedo = texture(albedoSampler, texCoords);
 
-  float Metal = mix(metalness, RMAO.r, PBR);								//If if the material has alpha channel = 1 use as
+  float Metal = mix(metalness, RMAO.g, PBR);								//If if the material has alpha channel = 1 use as
 																					//Metalness the one selected by the user, otherwise
 																					//sample from the RMAO texture
 
@@ -159,12 +112,12 @@ void main() {
   vec4 directionalDiffColor = albedo * vec4(directionalLightColor, 1.0) * 0.96 * (1.0 - Metal);
 	directionalDiffColor = mix(directionalDiffColor, vec4(1.0), ambEmuFact);
 	vec4 directionalSpecColor = (1.0 + 0.96 * Metal * (albedo - 1.0)) * vec4(directionalLightColor, 1.0);
-	directionalSpecColor = mix(directionalSpecColor, vec4(1.0), ambEmuFact);
+  directionalSpecColor = mix(directionalSpecColor, vec4(1.0), ambEmuFact);
 
-  vec4 selSpecFact = mix(specFactFromEnvMap * mix(0.4, 1.0, Metal), vec4(directionalSpecFact), 0.9);
-	vec4 selDimFact = mix(textureLod(cubemap, n, 8.0), vec4(directionalDimFact), 0.9);
+  vec4 selSpecFact = mix(specFactFromEnvMap * mix(0.4, 1.0, Metal), vec4(directionalSpecFact), 0.8);
+	vec4 selDimFact = mix(textureLod(cubemap, n, 8.0), vec4(directionalDimFact), 0.8);
 
-	vec4 color = vec4((directionalDiffColor * selDimFact + directionalSpecColor * selSpecFact).rgb, 1.0);
+  vec4 color = vec4((directionalDiffColor * selDimFact + directionalSpecColor * selSpecFact).rgb, 1.0);
 
   //Spot
   vec3 spotLightDir = normalize(spotLightPosition - fs_pos);
@@ -176,15 +129,20 @@ void main() {
                                                 * clamp((CosAngle - LCosOut) / (LCosIn - LCosOut), 0.0, 1.0);
 
   vec4 spotDiffColor = albedo * spotLightCol * 0.96 * (1.0 - Metal);
-	spotDiffColor = mix(spotDiffColor, vec4(1.0), ambEmuFact);
   vec4 spotSpecColor = (1.0 + 0.96 * Metal * (albedo - 1.0)) * spotLightCol;
-  spotSpecColor = mix(spotSpecColor, vec4(1.0), ambEmuFact);
 
-  selSpecFact = mix(specFactFromEnvMap * mix(0.4, 1.0, Metal), vec4(spotSpecFact), 0.2);
-	selDimFact = mix(textureLod(cubemap, n, 8.0), vec4(spotDimFact), 0.2);
+  selSpecFact = mix(specFactFromEnvMap * mix(0.4, 1.0, Metal), vec4(spotSpecFact), 0.95);
+	selDimFact = mix(textureLod(cubemap, n, 8.0), vec4(spotDimFact), 0.95);
 
   color += vec4((spotDiffColor * selDimFact + spotSpecColor * selSpecFact).rgb, 1.0);
   
   float skybox = effects.r;
-  outColor = mix(clamp(color, 0.0, 1.0), cubemapRgba, skybox);
+
+  float emission = effects.b;
+
+  vec4 emitColor = mix(vec4(0.0), albedo, emission);
+  const float emissionThreshold = 0.5;
+  emitColor *= 3.0 * step(vec4(emissionThreshold), emitColor);
+
+  outColor = mix(clamp(color + emitColor, 0.0, 1.0), cubemapRgba, skybox);
 }
