@@ -27,7 +27,7 @@ uniform vec3 eyePos;
 uniform float metalness;
 uniform float roughness;
 
-uniform vec3 effects; 				        //select the light effect
+uniform vec4 effects; 				        //select the light effect
 uniform mat4 inverseViewProjMatrix; 	//inv-transp of the ViewProjMatrix
 uniform samplerCube cubemap; 			    //texture of the skybox
 uniform sampler2D albedoSampler;
@@ -42,7 +42,8 @@ void main() {
   vec3 nNormal = normalize(fs_norm);
   vec4 p = vec4(fs_camera_pos, 1.0);
   vec4 cubemapRgba = texture(cubemap, normalize(p.xyz / p.w));
-  float PBR = effects.g;
+  float metRough = effects.g;
+  float normAO = effects.a;
 
 	//// online computation of tangent and bitangent
 	// compute derivations of the world position
@@ -67,7 +68,7 @@ void main() {
 
   vec2 texCoords = fs_uv;
   vec4 nMap = texture(normalSampler, texCoords);
-  vec3 n = mix(nNormal, normalize(tbn * (nMap.xyz * 2.0 - 1.0)), PBR);		//This means: use the "normal" normal ;) if NorMap is
+  vec3 n = mix(nNormal, normalize(tbn * (nMap.xyz * 2.0 - 1.0)), normAO);		//This means: use the "normal" normal ;) if NorMap is
 								 													//unchecked, NormalMap's normal otherwise
 
   vec4 RMAO = vec4(texture(roughSampler, texCoords).r, texture(metalSampler, texCoords).r,
@@ -76,15 +77,15 @@ void main() {
 
   vec3 lightDirNorm = normalize(directionalLightDirection);
   float directionalDimFact = max(dot(n, -lightDirNorm), 0.0);
-	directionalDimFact *= mix(1.0, RMAO.b, PBR);											//This means: if AmbOcl is selected multiply the
+	directionalDimFact *= mix(1.0, RMAO.b, normAO);										//This means: if AmbOcl is selected multiply the
   float spotDimFact = max(dot(n, spotLightDirection), 0.0);
-	spotDimFact *= mix(1.0, RMAO.b, PBR);											//This means: if AmbOcl is selected multiply the
+	spotDimFact *= mix(1.0, RMAO.b, metRough);											//This means: if AmbOcl is selected multiply the
 	 																				//value with the value from the b channel of the RMAO
 													  								//texture
 
 
   // Phong specular
-	float Rough = mix(roughness, RMAO.r, PBR);								//This means: if Texture is selected use as roughness
+	float Rough = mix(roughness, RMAO.r, metRough);								//This means: if Texture is selected use as roughness
 																					//the value from the g channel of the RMAO texture,
    																				//otherwise the value specified by the user in repMetRough
 	float rf = 1.0 - Rough;
@@ -96,7 +97,7 @@ void main() {
 
   vec4 albedo = texture(albedoSampler, texCoords);
 
-  float Metal = mix(metalness, RMAO.g, PBR);								//If if the material has alpha channel = 1 use as
+  float Metal = mix(metalness, RMAO.g, metRough);								//If if the material has alpha channel = 1 use as
 																					//Metalness the one selected by the user, otherwise
 																					//sample from the RMAO texture
 
