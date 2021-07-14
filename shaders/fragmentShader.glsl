@@ -37,6 +37,8 @@ uniform sampler2D roughSampler;
 uniform sampler2D AOSampler;
 uniform sampler2D heightSampler;
 
+uniform float fadeIn;
+
 void main() {
 
   vec3 nNormal = normalize(fs_norm);
@@ -68,8 +70,18 @@ void main() {
 
   vec2 texCoords = fs_uv;
   vec4 nMap = texture(normalSampler, texCoords);
-  vec3 n = mix(nNormal, normalize(tbn * (nMap.xyz * 2.0 - 1.0)), normAO);		//This means: use the "normal" normal ;) if NorMap is
+  vec3 ciaociao = normalize(tbn * (nMap.xyz * 2.0 - 1.0));
+  // somehow the following statement does not work
+  // it produces unpredictable behaviour
+  //vec3 n = mix(nNormal, ciaociao, normAO);		//This means: use the "normal" normal ;) if NorMap is
 								 													//unchecked, NormalMap's normal otherwise
+
+  vec3 n;
+  if(normAO == 0.0) {
+    n = nNormal;
+  } else {
+    n = normalize(tbn * (nMap.xyz * 2.0 - 1.0));
+  }
 
   vec4 RMAO = vec4(texture(roughSampler, texCoords).r, texture(metalSampler, texCoords).r,
                  texture(AOSampler, texCoords).r, 1.0);
@@ -145,5 +157,5 @@ void main() {
   const float emissionThreshold = 0.5;
   emitColor *= 3.0 * step(vec4(emissionThreshold), emitColor);
 
-  outColor = mix(clamp(color + emitColor, 0.0, 1.0), cubemapRgba, skybox);
+  outColor = vec4(mix(clamp(color + emitColor, 0.0, 1.0), cubemapRgba, skybox).rgb, fadeIn);
 }
