@@ -73,7 +73,7 @@ void main() {
 
   vec2 texCoords = fs_uv;
   vec4 nMap = texture(normalSampler, texCoords);
-  vec3 ciaociao = normalize(tbn * (nMap.xyz * 2.0 - 1.0));
+  // vec3 ciaociao = normalize(tbn * (nMap.xyz * 2.0 - 1.0));
   // somehow the following statement does not work
   // it produces unpredictable behaviour
   //vec3 n = mix(nNormal, ciaociao, normAO);		//This means: use the "normal" normal ;) if NorMap is
@@ -113,7 +113,7 @@ void main() {
   //if(animation == 1.0) {
   //  texCoords = (animMat*vec4(texCoords, 0.0, 1.0)).rg;
   //}
-  texCoords = mix(texCoords, (animMat*vec4(texCoords, 0.0, 1.0)).rg, animation);
+  texCoords = mix(texCoords, (animMat * vec4(texCoords, 0.0, 1.0)).rg, animation);
   vec4 albedo = texture(albedoSampler, texCoords);
 
   float Metal = mix(metalness, RMAO.g, metRough);								//If if the material has alpha channel = 1 use as
