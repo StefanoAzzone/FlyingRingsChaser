@@ -38,6 +38,9 @@ uniform sampler2D AOSampler;
 uniform sampler2D heightSampler;
 
 uniform float fadeIn;
+uniform float animation;
+
+uniform mat4 animMat;
 
 void main() {
 
@@ -107,6 +110,10 @@ void main() {
                                           //without the environment contribute 
 																					//(only the incoming direct light is considered)
 
+  //if(animation == 1.0) {
+  //  texCoords = (animMat*vec4(texCoords, 0.0, 1.0)).rg;
+  //}
+  texCoords = mix(texCoords, (animMat*vec4(texCoords, 0.0, 1.0)).rg, animation);
   vec4 albedo = texture(albedoSampler, texCoords);
 
   float Metal = mix(metalness, RMAO.g, metRough);								//If if the material has alpha channel = 1 use as
