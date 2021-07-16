@@ -164,5 +164,5 @@ void main() {
   const float emissionThreshold = 0.5;
   emitColor *= 3.0 * step(vec4(emissionThreshold), emitColor);
 
-  outColor = vec4(mix(clamp(color + emitColor, 0.0, 1.0), cubemapRgba, skybox).rgb, fadeIn);
+  outColor = mix(vec4(mix(clamp(color + emitColor, 0.0, 1.0), cubemapRgba, skybox).rgb, fadeIn), albedo, animation);
 }
