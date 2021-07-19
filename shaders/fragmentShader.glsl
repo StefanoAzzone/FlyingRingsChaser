@@ -28,7 +28,6 @@ uniform float metalness;
 uniform float roughness;
 
 uniform vec4 effects; 				        //select the light effect
-uniform mat4 inverseViewProjMatrix; 	//inv-transp of the ViewProjMatrix
 uniform samplerCube cubemap; 			    //texture of the skybox
 uniform sampler2D albedoSampler;
 uniform sampler2D normalSampler;
