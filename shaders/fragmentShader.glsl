@@ -34,7 +34,6 @@ uniform sampler2D normalSampler;
 uniform sampler2D metalSampler;
 uniform sampler2D roughSampler;
 uniform sampler2D AOSampler;
-uniform sampler2D heightSampler;
 
 uniform float fadeIn;
 uniform float animation;
