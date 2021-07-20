@@ -66,7 +66,6 @@ void main() {
 	mat3 tbn = mat3(t, b, nNormal);													        //Matrix containing tangent, bitangent and normal.
 
   vec3 v = normalize(eyePos - fs_pos);
-  vec3 viewDir = transpose(tbn) * v;
 
   vec2 texCoords = fs_uv;
   texCoords = mix(texCoords, (animMat * vec4(texCoords, 0.0, 1.0)).rg, animation);
@@ -92,7 +91,7 @@ void main() {
   float directionalDimFact = max(dot(n, -lightDirNorm), 0.0);
 	directionalDimFact *= mix(1.0, RMAO.b, normAO);									//If AmbOcl is selected multiply by the AO component of RMAO
   float spotDimFact = max(dot(n, spotLightDirection), 0.0);
-	spotDimFact *= mix(1.0, RMAO.b, metRough);											//If AmbOcl is selected multiply by the AO component of RMAO
+	spotDimFact *= mix(1.0, RMAO.b, normAO);											  //If AmbOcl is selected multiply by the AO component of RMAO
 
 
   // Phong specular
@@ -112,8 +111,7 @@ void main() {
   vec3 refDir = -reflect(v,n);													          //n is the normal and v = normalize(eyePos - fs_pos)
   float mipCount = 9.0;                                           // resolution of 512x512
   float lod = (Rough * mipCount);
-	vec4 specFactFromEnvMap = textureLod(cubemap, refDir, lod);			//This is the light of the environment that is
-																					//reflected on the object
+	vec4 specFactFromEnvMap = textureLod(cubemap, refDir, lod);
 
   //Directional diffuse
   vec4 directionalDiffColor = albedo * vec4(directionalLightColor, 1.0) * 0.96 * (1.0 - Metal);
